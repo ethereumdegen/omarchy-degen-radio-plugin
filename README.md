@@ -8,7 +8,7 @@ The plugin ID remains `ethereumdegen.spotatui` so existing Omarchy installations
 
 - Appears while the `org.mpris.MediaPlayer2.degen_radio` service is available.
 - Shows the current ICY song title and station name.
-- Opens a popup with previous, play/pause, next, and saved-station controls.
+- Opens a popup with previous, play/pause, next, volume, and saved-station controls.
 - Highlights the active saved station.
 - Left-click opens the popup; middle-click toggles playback.
 - Mouse wheel cycles saved stations while radio is active.
@@ -50,6 +50,7 @@ degen-radio
 | Middle click | Pause or resume |
 | Right click | Open or focus the terminal player |
 | Wheel up/down | Previous or next saved station |
+| Popup `−` / `+` | Lower or raise Degen Radio volume by 5% |
 | Station row | Switch to that station |
 
 Station rows come from `degen-radio radio list --json`. Selecting a row calls `degen-radio radio play URL`, which sends standard MPRIS `OpenUri` to the running player. The plugin never edits state files while the player is running.

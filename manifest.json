@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "id": "ethereumdegen.spotatui",
   "name": "Degen Radio",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": "ethereumdegen",
-  "description": "Degen Radio now-playing panel, playback controls, and saved station picker",
+  "description": "Degen Radio now-playing panel, playback and volume controls, and saved station picker",
   "kinds": [
     "service",
     "bar-widget"
@@ -16,7 +16,7 @@
   },
   "barWidget": {
     "displayName": "Degen Radio",
-    "description": "Internet-radio metadata, playback controls, and saved station switching",
+    "description": "Internet-radio metadata, playback and volume controls, and saved station switching",
     "category": "Media",
     "allowMultiple": false
   },

@@ -23,6 +23,12 @@ BarWidget {
   readonly property string title: activePlayer ? (activePlayer.trackTitle || "") : ""
   readonly property string artist: activePlayer ? (activePlayer.trackArtist || "") : ""
   readonly property string nowPlaying: title + (artist ? " — " + artist : "")
+  readonly property int volumePercent: {
+    if (!activePlayer) return 0
+    var value = Number(activePlayer.volume)
+    if (!isFinite(value)) return 0
+    return Math.round(Math.max(0, Math.min(1, value)) * 100)
+  }
 
   property bool popupOpen: false
   property var stations: []
@@ -73,6 +79,14 @@ BarWidget {
     if (index < 0) index = delta > 0 ? -1 : 0
     index = (index + delta + stations.length) % stations.length
     playStation(stations[index].url)
+  }
+  function adjustVolume(delta) {
+    if (!activePlayer) return
+    var step = Number(delta)
+    if (!isFinite(step)) return
+    var current = Number(activePlayer.volume)
+    if (!isFinite(current)) current = 0
+    activePlayer.volume = Math.max(0, Math.min(1, current + step))
   }
 
   onPopupOpenChanged: if (popupOpen) refreshStations()
@@ -277,6 +291,52 @@ BarWidget {
             if (root.isSavedRadio) root.cycleStation(1)
             else if (root.mediaService) root.mediaService.runAction("next", false, root.mediaService.playerKey(root.activePlayer))
           }
+        }
+      }
+
+      Row {
+        anchors.horizontalCenter: parent.horizontalCenter
+        spacing: Style.space(8)
+
+        Text {
+          text: "Volume"
+          color: root.bar.foreground
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.bodySmall
+          anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Button {
+          text: "−"
+          tooltipText: "Volume down"
+          foreground: root.bar.foreground
+          enabled: root.hasPlayer && root.volumePercent > 0
+          opacity: enabled ? 1.0 : 0.4
+          horizontalPadding: Style.spacing.controlPaddingX
+          verticalPadding: Style.space(4)
+          onClicked: root.adjustVolume(-0.05)
+        }
+
+        Text {
+          text: root.volumePercent + "%"
+          color: root.bar.foreground
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.bodySmall
+          font.bold: true
+          width: Style.space(42)
+          horizontalAlignment: Text.AlignHCenter
+          anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Button {
+          text: "+"
+          tooltipText: "Volume up"
+          foreground: root.bar.foreground
+          enabled: root.hasPlayer && root.volumePercent < 100
+          opacity: enabled ? 1.0 : 0.4
+          horizontalPadding: Style.spacing.controlPaddingX
+          verticalPadding: Style.space(4)
+          onClicked: root.adjustVolume(0.05)
         }
       }
       Rectangle {
