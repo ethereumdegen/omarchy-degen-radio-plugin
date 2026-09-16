@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "ethereumdegen.spotatui",
+  "name": "Spotatui",
+  "version": "1.0.0",
+  "author": "ethereumdegen",
+  "description": "Spotatui now-playing panel and playback controls",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Spotatui",
+    "description": "Spotatui now-playing icon, popup, and playback controls",
+    "category": "Media",
+    "allowMultiple": false
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.media"
+  }
+}
