@@ -2,11 +2,11 @@
 
 An Omarchy bar plugin for [degen-radio](https://github.com/ethereumdegen/degen-radio). It shows live radio metadata, controls playback through MPRIS, and switches between saved stations.
 
-The plugin ID remains `ethereumdegen.spotatui`, and the player command remains `spotatui`, to preserve existing Omarchy installations and desktop integrations.
+The plugin ID remains `ethereumdegen.spotatui` so existing Omarchy installations upgrade in place. The player command is `degen-radio`.
 
 ## Features
 
-- Appears while the `org.mpris.MediaPlayer2.spotatui` service is available.
+- Appears while the `org.mpris.MediaPlayer2.degen_radio` service is available.
 - Shows the current ICY song title and station name.
 - Opens a popup with previous, play/pause, next, and saved-station controls.
 - Highlights the active saved station.
@@ -18,7 +18,7 @@ The plugin ID remains `ethereumdegen.spotatui`, and the player command remains `
 ## Requirements
 
 - Omarchy with the Quickshell plugin system.
-- [degen-radio](https://github.com/ethereumdegen/degen-radio) installed so `spotatui` resolves on `PATH`.
+- [degen-radio](https://github.com/ethereumdegen/degen-radio) installed so `degen-radio` resolves on `PATH`.
 
 Install the player from a clone:
 
@@ -38,7 +38,7 @@ omarchy bar move ethereumdegen.spotatui --after omarchy.agents
 Start the player:
 
 ```bash
-spotatui
+degen-radio
 ```
 
 ## Controls
@@ -52,7 +52,7 @@ spotatui
 | Wheel up/down | Previous or next saved station |
 | Station row | Switch to that station |
 
-Station rows come from `spotatui radio list --json`. Selecting a row calls `spotatui radio play URL`, which sends standard MPRIS `OpenUri` to the running player. The plugin never edits state files while the player is running.
+Station rows come from `degen-radio radio list --json`. Selecting a row calls `degen-radio radio play URL`, which sends standard MPRIS `OpenUri` to the running player. The plugin never edits state files while the player is running.
 
 ## Remove
 

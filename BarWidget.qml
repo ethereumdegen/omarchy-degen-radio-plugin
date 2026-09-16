@@ -14,7 +14,7 @@ BarWidget {
     for (var i = 0; i < players.length; i++) {
       var player = players[i]
       var identity = String(player.identity || player.desktopEntry || player.dbusName || "").toLowerCase()
-      if (identity.indexOf("spotatui") >= 0) return player
+      if (identity.indexOf("degen radio") >= 0 || identity.indexOf("degen-radio") >= 0 || identity.indexOf("degen_radio") >= 0) return player
     }
     return null
   }
@@ -45,7 +45,7 @@ BarWidget {
   }
   function refreshStations() {
     if (stationListProcess.running) return
-    stationListProcess.command = ["spotatui", "radio", "list", "--json"]
+    stationListProcess.command = ["degen-radio", "radio", "list", "--json"]
     stationListProcess.running = true
   }
   function applyStations(raw) {
@@ -56,7 +56,7 @@ BarWidget {
       stationError = ""
     } catch (error) {
       stations = []
-      stationError = "Could not read Spotatui stations"
+      stationError = "Could not read Degen Radio stations"
       console.warn("ethereumdegen.spotatui", error)
     }
   }
@@ -64,7 +64,7 @@ BarWidget {
     if (!url || stationPlayProcess.running) return
     pendingStationUrl = String(url)
     stationError = ""
-    stationPlayProcess.command = ["spotatui", "radio", "play", pendingStationUrl]
+    stationPlayProcess.command = ["degen-radio", "radio", "play", pendingStationUrl]
     stationPlayProcess.running = true
   }
   function cycleStation(delta) {
@@ -141,7 +141,7 @@ BarWidget {
 
     onPressed: function(mouseButton) {
       if (mouseButton === Qt.RightButton) {
-        if (root.bar) root.bar.run("omarchy-launch-or-focus-tui spotatui")
+        if (root.bar) root.bar.run("omarchy-launch-or-focus-tui degen-radio")
       } else if (mouseButton === Qt.MiddleButton) {
         if (root.mediaService) root.mediaService.runAction("playPause", false, root.playerKey())
       } else {
