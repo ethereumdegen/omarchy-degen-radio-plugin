@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.Ui
 import qs.Commons
 
@@ -24,6 +25,16 @@ BarWidget {
   readonly property string nowPlaying: title + (artist ? " — " + artist : "")
 
   property bool popupOpen: false
+  property var stations: []
+  property string stationError: ""
+  property string pendingStationUrl: ""
+  readonly property int activeStationIndex: {
+    for (var i = 0; i < stations.length; i++) {
+      if (String(stations[i].name || "") === title) return i
+    }
+    return -1
+  }
+  readonly property bool isSavedRadio: activeStationIndex >= 0
   readonly property bool opened: popupOpen
 
   function open() { popupOpen = true }
@@ -31,6 +42,88 @@ BarWidget {
   function togglePanel() { popupOpen = !popupOpen }
   function playerKey() {
     return mediaService && activePlayer ? mediaService.playerKey(activePlayer) : ""
+  }
+  function refreshStations() {
+    if (stationListProcess.running) return
+    stationListProcess.command = ["spotatui", "radio", "list", "--json"]
+    stationListProcess.running = true
+  }
+  function applyStations(raw) {
+    try {
+      var parsed = JSON.parse(String(raw || "[]"))
+      if (!Array.isArray(parsed)) throw new Error("station list is not an array")
+      stations = parsed
+      stationError = ""
+    } catch (error) {
+      stations = []
+      stationError = "Could not read Spotatui stations"
+      console.warn("ethereumdegen.spotatui", error)
+    }
+  }
+  function playStation(url) {
+    if (!url || stationPlayProcess.running) return
+    pendingStationUrl = String(url)
+    stationError = ""
+    stationPlayProcess.command = ["spotatui", "radio", "play", pendingStationUrl]
+    stationPlayProcess.running = true
+  }
+  function cycleStation(delta) {
+    if (stations.length === 0) return
+    var index = activeStationIndex
+    if (index < 0) index = delta > 0 ? -1 : 0
+    index = (index + delta + stations.length) % stations.length
+    playStation(stations[index].url)
+  }
+
+  onPopupOpenChanged: if (popupOpen) refreshStations()
+
+  Process {
+    id: stationListProcess
+    running: false
+    command: []
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.applyStations(text)
+    }
+    stderr: StdioCollector {
+      id: stationListStderr
+      waitForEnd: true
+    }
+    onExited: function(exitCode) {
+      if (exitCode !== 0) {
+        root.stations = []
+        root.stationError = "Radio controls require degen-radio"
+        var detail = String(stationListStderr.text || "").trim()
+        if (detail) console.warn("ethereumdegen.spotatui", detail)
+      }
+    }
+  }
+
+  Process {
+    id: stationPlayProcess
+    running: false
+    command: []
+    stderr: StdioCollector {
+      id: stationPlayStderr
+      waitForEnd: true
+    }
+    onExited: function(exitCode) {
+      root.pendingStationUrl = ""
+      if (exitCode !== 0) {
+        root.stationError = "Could not switch radio station"
+        var detail = String(stationPlayStderr.text || "").trim()
+        if (detail) console.warn("ethereumdegen.spotatui", detail)
+      } else {
+        root.refreshStations()
+      }
+    }
+  }
+
+  Timer {
+    interval: 15000
+    repeat: true
+    running: root.popupOpen
+    onTriggered: root.refreshStations()
   }
 
   visible: hasPlayer
@@ -44,7 +137,7 @@ BarWidget {
     text: "󰓇"
     foreground: root.activePlayer && root.activePlayer.isPlaying ? "#1db954" : root.bar.barForeground
     active: root.popupOpen
-    tooltipText: root.nowPlaying || "Spotatui"
+    tooltipText: root.nowPlaying || "Degen Radio"
 
     onPressed: function(mouseButton) {
       if (mouseButton === Qt.RightButton) {
@@ -57,8 +150,8 @@ BarWidget {
     }
 
     onWheelMoved: function(delta) {
-      if (!root.mediaService) return
-      root.mediaService.runAction(delta > 0 ? "previous" : "next", false, root.playerKey())
+      if (root.isSavedRadio) root.cycleStation(delta > 0 ? -1 : 1)
+      else if (root.mediaService) root.mediaService.runAction(delta > 0 ? "previous" : "next", false, root.playerKey())
     }
   }
 
@@ -154,9 +247,12 @@ BarWidget {
           foreground: root.bar.foreground
           horizontalPadding: Style.spacing.controlPaddingX
           verticalPadding: Style.spacing.controlPaddingY
-          enabled: root.activePlayer && root.activePlayer.canGoPrevious
+          enabled: root.isSavedRadio ? root.stations.length > 1 : (root.activePlayer && root.activePlayer.canGoPrevious)
           opacity: enabled ? 1.0 : 0.4
-          onClicked: if (root.mediaService) root.mediaService.runAction("previous", false, root.mediaService.playerKey(root.activePlayer))
+          onClicked: {
+            if (root.isSavedRadio) root.cycleStation(-1)
+            else if (root.mediaService) root.mediaService.runAction("previous", false, root.mediaService.playerKey(root.activePlayer))
+          }
         }
 
         Button {
@@ -175,11 +271,78 @@ BarWidget {
           foreground: root.bar.foreground
           horizontalPadding: Style.spacing.controlPaddingX
           verticalPadding: Style.spacing.controlPaddingY
-          enabled: root.activePlayer && root.activePlayer.canGoNext
+          enabled: root.isSavedRadio ? root.stations.length > 1 : (root.activePlayer && root.activePlayer.canGoNext)
           opacity: enabled ? 1.0 : 0.4
-          onClicked: if (root.mediaService) root.mediaService.runAction("next", false, root.mediaService.playerKey(root.activePlayer))
+          onClicked: {
+            if (root.isSavedRadio) root.cycleStation(1)
+            else if (root.mediaService) root.mediaService.runAction("next", false, root.mediaService.playerKey(root.activePlayer))
+          }
         }
       }
+      Rectangle {
+        width: parent.width
+        height: 1
+        color: Qt.rgba(root.bar.foreground.r, root.bar.foreground.g, root.bar.foreground.b, 0.16)
+      }
+
+      Text {
+        text: root.isSavedRadio ? "Radio stations · LIVE" : "Radio stations"
+        color: root.isSavedRadio ? "#1db954" : root.bar.foreground
+        font.family: root.bar.fontFamily
+        font.pixelSize: Style.font.bodySmall
+        font.bold: true
+      }
+
+      ListView {
+        id: stationListView
+        width: parent.width
+        height: visible ? Math.min(contentHeight, Style.space(180)) : 0
+        visible: root.stations.length > 0
+        clip: true
+        spacing: Style.space(2)
+        model: root.stations
+
+        delegate: Button {
+          required property var modelData
+          width: stationListView.width
+          text: {
+            var label = String(modelData.name || modelData.url || "Unnamed station")
+            return label.length > 38 ? label.slice(0, 37) + "…" : label
+          }
+          tooltipText: String(modelData.name || "") + "\n" + String(modelData.url || "")
+          foreground: root.bar.foreground
+          leftAlign: true
+          focusable: true
+          selected: root.title === String(modelData.name || "")
+          enabled: !stationPlayProcess.running
+          opacity: root.pendingStationUrl === String(modelData.url || "") ? 0.55 : 1.0
+          horizontalPadding: Style.spacing.controlPaddingX
+          verticalPadding: Style.space(5)
+          onClicked: root.playStation(modelData.url)
+        }
+      }
+
+      Text {
+        width: parent.width
+        visible: root.stationError !== ""
+        text: root.stationError
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: Qt.darker(root.bar.foreground, 1.3)
+        font.family: root.bar.fontFamily
+        font.pixelSize: Style.font.caption
+      }
+
+      Text {
+        width: parent.width
+        visible: root.stations.length === 0 && root.stationError === ""
+        text: stationListProcess.running ? "Loading stations…" : "No saved radio stations"
+        textFormat: Text.PlainText
+        color: Qt.darker(root.bar.foreground, 1.3)
+        font.family: root.bar.fontFamily
+        font.pixelSize: Style.font.caption
+      }
+
 
     }
   }
