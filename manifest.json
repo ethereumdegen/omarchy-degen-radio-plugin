@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "ethereumdegen.spotatui",
   "name": "Degen Radio",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "author": "ethereumdegen",
   "description": "Degen Radio now-playing panel, playback and volume controls, and saved station picker",
   "kinds": [

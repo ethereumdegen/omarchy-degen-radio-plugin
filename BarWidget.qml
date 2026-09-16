@@ -80,13 +80,11 @@ BarWidget {
     index = (index + delta + stations.length) % stations.length
     playStation(stations[index].url)
   }
-  function adjustVolume(delta) {
+  function setVolume(value) {
     if (!activePlayer) return
-    var step = Number(delta)
-    if (!isFinite(step)) return
-    var current = Number(activePlayer.volume)
-    if (!isFinite(current)) current = 0
-    activePlayer.volume = Math.max(0, Math.min(1, current + step))
+    var next = Number(value)
+    if (!isFinite(next)) return
+    activePlayer.volume = Math.max(0, Math.min(1, next))
   }
 
   onPopupOpenChanged: if (popupOpen) refreshStations()
@@ -294,49 +292,54 @@ BarWidget {
         }
       }
 
-      Row {
-        anchors.horizontalCenter: parent.horizontalCenter
-        spacing: Style.space(8)
+      Column {
+        width: parent.width
+        spacing: Style.space(4)
 
-        Text {
-          text: "Volume"
-          color: root.bar.foreground
-          font.family: root.bar.fontFamily
-          font.pixelSize: Style.font.bodySmall
-          anchors.verticalCenter: parent.verticalCenter
+        Row {
+          width: parent.width
+
+          Text {
+            id: volumeLabel
+            text: "Volume"
+            color: root.bar.foreground
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            font.bold: true
+            anchors.verticalCenter: parent.verticalCenter
+          }
+
+          Item {
+            width: parent.width - volumeLabel.implicitWidth - volumePercentLabel.width
+            height: 1
+          }
+
+          Text {
+            id: volumePercentLabel
+            text: (radioVolumeSlider.dragging
+              ? Math.round(radioVolumeSlider.liveValue * 100)
+              : root.volumePercent) + "%"
+            color: Qt.darker(root.bar.foreground, 1.4)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.caption
+            font.bold: true
+            width: Style.space(42)
+            horizontalAlignment: Text.AlignRight
+            anchors.verticalCenter: parent.verticalCenter
+          }
         }
 
-        Button {
-          text: "−"
-          tooltipText: "Volume down"
-          foreground: root.bar.foreground
-          enabled: root.hasPlayer && root.volumePercent > 0
+        PanelSlider {
+          id: radioVolumeSlider
+          bar: root.bar
+          width: parent.width
+          minimum: 0
+          maximum: 1
+          step: 0.05
+          value: root.activePlayer ? Number(root.activePlayer.volume) : 0
+          enabled: root.hasPlayer
           opacity: enabled ? 1.0 : 0.4
-          horizontalPadding: Style.spacing.controlPaddingX
-          verticalPadding: Style.space(4)
-          onClicked: root.adjustVolume(-0.05)
-        }
-
-        Text {
-          text: root.volumePercent + "%"
-          color: root.bar.foreground
-          font.family: root.bar.fontFamily
-          font.pixelSize: Style.font.bodySmall
-          font.bold: true
-          width: Style.space(42)
-          horizontalAlignment: Text.AlignHCenter
-          anchors.verticalCenter: parent.verticalCenter
-        }
-
-        Button {
-          text: "+"
-          tooltipText: "Volume up"
-          foreground: root.bar.foreground
-          enabled: root.hasPlayer && root.volumePercent < 100
-          opacity: enabled ? 1.0 : 0.4
-          horizontalPadding: Style.spacing.controlPaddingX
-          verticalPadding: Style.space(4)
-          onClicked: root.adjustVolume(0.05)
+          onMoved: function(v) { root.setVolume(v) }
         }
       }
       Rectangle {
