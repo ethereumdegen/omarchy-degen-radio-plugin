@@ -31,7 +31,7 @@ cargo install --path . --force
 ## Plugin install
 
 ```bash
-omarchy plugin add https://github.com/ethereumdegen/omarchy-spotatui-plugin.git --enable
+omarchy plugin add https://github.com/ethereumdegen/omarchy-degen-radio-plugin.git --enable
 omarchy bar move ethereumdegen.spotatui --after omarchy.agents
 ```
 
